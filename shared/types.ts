@@ -61,6 +61,17 @@ export interface Bootstrap {
   timer: Timer | null;
   business: Business;
   categories: ExpenseCategory[];
+  version: VersionInfo;
+}
+
+/** This install's version, and the latest one published, checked nightly. */
+export interface VersionInfo {
+  current: string;
+  /** Null until the first check. */
+  latest: string | null;
+  checkedAt: string | null;
+  updateAvailable: boolean;
+  changelogUrl: string;
 }
 
 export interface HarvestRow {

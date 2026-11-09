@@ -2,6 +2,7 @@ import { authenticate, type AuthEnv } from "./auth";
 import { handleApi } from "./api";
 import { syncAll } from "./bank";
 import { runBackup } from "./backup";
+import { checkForUpdate } from "./updates";
 import { plaidFromEnv, type BankProvider, type PlaidEnv } from "./plaid";
 import { sealedProvider, sealStoredTokens, vaultFromKey } from "./vault";
 
@@ -80,7 +81,7 @@ export default {
     return res;
   },
 
-  // Every night: back up first, then encrypt any old bank logins, then pull new transactions.
+  // Every night: back up first, see if a newer version is out, then encrypt any old bank logins and pull new transactions.
   async scheduled(_controller, env, ctx) {
     const db = env.DB;
     if (!db) return;
@@ -93,6 +94,7 @@ export default {
             console.error("Nightly backup failed", e);
           }
         }
+        await checkForUpdate(db);
         const bank = await bankFor(env);
         if (!bank) return;
         await sealStoredTokens(db, await vaultFromKey(env.BANK_TOKEN_KEY));

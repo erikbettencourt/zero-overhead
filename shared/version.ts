@@ -1,0 +1,20 @@
+import pkg from "../package.json";
+
+/** This install's version, from package.json at build time. */
+export const APP_VERSION: string = pkg.version;
+
+/** Where updates come from. Its package.json version is the latest release. */
+export const UPSTREAM_REPO = "erikbettencourt/zero-overhead";
+export const UPSTREAM_PACKAGE_URL = `https://raw.githubusercontent.com/${UPSTREAM_REPO}/main/package.json`;
+export const CHANGELOG_URL = `https://github.com/${UPSTREAM_REPO}/blob/main/CHANGELOG.md`;
+
+/** 1 if a is newer than b, -1 if older, 0 if the same. "1.10.0" is newer than "1.9.2". */
+export function compareVersions(a: string, b: string): number {
+  const parts = (v: string) => v.replace(/^v/, "").split("-")[0].split(".").map((n) => Number.parseInt(n, 10) || 0);
+  const [x, y] = [parts(a), parts(b)];
+  for (let i = 0; i < Math.max(x.length, y.length); i++) {
+    const d = (x[i] ?? 0) - (y[i] ?? 0);
+    if (d !== 0) return d > 0 ? 1 : -1;
+  }
+  return 0;
+}

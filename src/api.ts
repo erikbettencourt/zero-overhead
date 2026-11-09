@@ -1,4 +1,4 @@
-import type { QbImportRequest, QbImportResult, TaxPayment, TaxProfile, TaxSummary, YearEndSummary, StatementColumns, StatementRow, StatementImportResult, Jurisdiction, BankOverview, BankRule, BankTransaction, SpendingSummary, SyncResult, TransactionKind, Summary, Bootstrap, Business, Client, HarvestRow, ImportResult, InvoiceDetail, InvoiceStatus, InvoiceSummary, Project, ProjectTask, Report, Task, TimeEntry, Timer } from "../shared/types";
+import type { QbImportRequest, QbImportResult, TaxPayment, TaxProfile, TaxSummary, VersionInfo, YearEndSummary, StatementColumns, StatementRow, StatementImportResult, Jurisdiction, BankOverview, BankRule, BankTransaction, SpendingSummary, SyncResult, TransactionKind, Summary, Bootstrap, Business, Client, HarvestRow, ImportResult, InvoiceDetail, InvoiceStatus, InvoiceSummary, Project, ProjectTask, Report, Task, TimeEntry, Timer } from "../shared/types";
 
 export class ApiError extends Error {
   constructor(
@@ -122,6 +122,7 @@ export const api = {
   deleteRule: (id: number) => request<void>("DELETE", `/api/rules/${id}`),
 
   taxes: (year: number) => request<TaxSummary>("GET", `/api/taxes/${year}`),
+  checkForUpdate: () => request<VersionInfo>("POST", "/api/version/check", {}),
   yearEnd: (year: number) => request<YearEndSummary>("GET", `/api/taxes/${year}/year-end`),
   taxProfile: () => request<TaxProfile>("GET", "/api/tax-profile"),
   saveTaxProfile: (body: Partial<TaxProfile>) => request<TaxProfile>("PUT", "/api/tax-profile", body),

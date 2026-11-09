@@ -1,7 +1,7 @@
 {
   "name": "zero-overhead",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "The freelance back office you own. Hours, invoices, spending and quarterly taxes, running in your own Cloudflare account.",
   "license": "MIT",
   "type": "module",

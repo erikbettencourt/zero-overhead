@@ -26,6 +26,7 @@ import { bankRoutes, listCategories } from "./bank";
 import { taxRoutes } from "./taxes";
 import { quickbooksRoutes } from "./quickbooks";
 import { backupRoutes } from "./backup";
+import { updateRoutes, versionInfo } from "./updates";
 import type { BankProvider } from "./plaid";
 
 
@@ -107,7 +108,7 @@ const routes: Route[] = [
     "GET",
     /^\/api\/bootstrap$/,
     async ({ db, email }) => {
-      const [clients, projects, tasks, projectTasks, timer, business, categories] = await Promise.all([
+      const [clients, projects, tasks, projectTasks, timer, business, categories, version] = await Promise.all([
         all(db, "SELECT * FROM clients ORDER BY archived, name COLLATE NOCASE"),
         all(db, "SELECT * FROM projects ORDER BY archived, name COLLATE NOCASE"),
         all(db, "SELECT * FROM tasks ORDER BY archived, name COLLATE NOCASE"),
@@ -115,6 +116,7 @@ const routes: Route[] = [
         getTimer(db),
         getBusiness(db),
         listCategories(db),
+        versionInfo(db),
       ]);
       const body: Bootstrap = {
         email,
@@ -125,6 +127,7 @@ const routes: Route[] = [
         timer,
         business,
         categories,
+        version,
       };
       return json(body);
     },
@@ -457,6 +460,7 @@ const routes: Route[] = [
   ...dataRoutes,
   ...bankRoutes,
   ...taxRoutes,
+  ...updateRoutes,
   ...quickbooksRoutes,
   ...backupRoutes,
 ];
