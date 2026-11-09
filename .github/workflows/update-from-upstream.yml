@@ -43,10 +43,9 @@ jobs:
           git checkout -B update-from-upstream
           # Your .github stays as it is: GitHub doesn't let a workflow change workflow files.
           git merge --no-commit --no-ff --allow-unrelated-histories FETCH_HEAD || true
+          git reset -q HEAD -- .github
           git checkout HEAD -- .github
-          for f in $(git ls-files .github); do
-            git cat-file -e "HEAD:$f" 2>/dev/null || git rm -q --cached --force "$f"
-          done
+          git clean -fdq -- .github
           # Your database ID stays, unless the update changed something else in the file.
           if git diff --name-only --diff-filter=U | grep -qx wrangler.jsonc; then
             git show FETCH_HEAD:wrangler.jsonc > /tmp/theirs.jsonc
