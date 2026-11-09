@@ -1,0 +1,71 @@
+# For your copy of Zero Overhead: brings in new versions from the main repository as a pull
+# request. Merge it and Cloudflare deploys it. See docs/updating.md.
+#
+# Needs one setting in your copy: Settings > Actions > General > Workflow permissions >
+# "Allow GitHub Actions to create and approve pull requests".
+name: Update from upstream
+
+on:
+  schedule:
+    - cron: "41 11 * * *" # daily, 11:41 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  UPSTREAM: https://github.com/erikbettencourt/zero-overhead
+
+jobs:
+  update:
+    # Copies only; the main repository is where updates come from.
+    if: github.repository != 'erikbettencourt/zero-overhead'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Fetch the latest version
+        run: git fetch "$UPSTREAM" main
+
+      - name: Open or update a pull request if there's anything new
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git merge-base --is-ancestor FETCH_HEAD HEAD; then
+            echo "Already up to date."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B update-from-upstream
+          # Your .github stays as it is: GitHub doesn't let a workflow change workflow files.
+          git merge --no-commit --no-ff --allow-unrelated-histories FETCH_HEAD || true
+          git checkout HEAD -- .github
+          for f in $(git ls-files .github); do
+            git cat-file -e "HEAD:$f" 2>/dev/null || git rm -q --cached --force "$f"
+          done
+          # Your database ID stays, unless the update changed something else in the file.
+          if git diff --name-only --diff-filter=U | grep -qx wrangler.jsonc; then
+            git show FETCH_HEAD:wrangler.jsonc > /tmp/theirs.jsonc
+            if git show HEAD:wrangler.jsonc | sed -E 's/"database_id": "[^"]*"/"database_id": "X"/' | diff -q - <(sed -E 's/"database_id": "[^"]*"/"database_id": "X"/' /tmp/theirs.jsonc) >/dev/null; then
+              git checkout HEAD -- wrangler.jsonc
+            fi
+          fi
+          CONFLICTS=$(git diff --name-only --diff-filter=U)
+          if [ -n "$CONFLICTS" ]; then
+            echo "::error::These files changed both in your copy and upstream; merge them by hand (see docs/updating.md): $CONFLICTS"
+            exit 1
+          fi
+          git commit --no-edit -m "Bring in the latest version"
+          git push --force origin update-from-upstream
+          VERSION=$(node -p "require('./package.json').version")
+          if [ "$(gh pr list --head update-from-upstream --state open --json number --jq length)" = "0" ]; then
+            gh pr create --base "${{ github.event.repository.default_branch }}" --head update-from-upstream \
+              --title "Update to Zero Overhead $VERSION" \
+              --body "The latest version from upstream. See CHANGELOG.md for what's new. Merge with \"Create a merge commit\" to deploy it."
+          else
+            gh pr edit update-from-upstream --title "Update to Zero Overhead $VERSION"
+          fi
