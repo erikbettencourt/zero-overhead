@@ -2,7 +2,7 @@
 
 New versions come out in this repository. Your copy on GitHub doesn't change on its own; you bring updates in when you're ready, and Cloudflare deploys them like any other change.
 
-The app tells you when there's one: **Settings › Data** shows your version, and the top of every page says **Update available** when a newer one is out. [CHANGELOG.md](../CHANGELOG.md) says what's in each.
+The app tells you when there's one: **Settings › App version** shows your version, and the top of every page says **Update available** when a newer one is out. [CHANGELOG.md](../CHANGELOG.md) says what's in each.
 
 ## The update workflow (recommended)
 

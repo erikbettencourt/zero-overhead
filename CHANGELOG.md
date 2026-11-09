@@ -5,6 +5,7 @@ Each version's changes, newest first. The app checks this repo's version every n
 ## 0.2.1
 
 - **Docs.** A step-by-step [setup guide](docs/setup.md) with the Deploy to Cloudflare button, [bank and card transactions](docs/bank.md) with or without Plaid, [staying up to date](docs/updating.md), [tax figures](docs/tax-figures.md), and [CONTRIBUTING.md](CONTRIBUTING.md).
+- **Settings › App version.** Your version and update check now have their own tab, apart from your data.
 - **Update from upstream workflow** for your copy: checks daily for a new version and opens a pull request. Turn it on with one setting; see [Stay up to date](docs/updating.md). If your copy was made before this version, copy `.github/workflows/update-from-upstream.yml` over by hand once.
 
 ## 0.2.0

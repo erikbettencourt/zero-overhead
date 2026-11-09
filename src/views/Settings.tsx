@@ -8,15 +8,16 @@ import {
   DatabaseIcon,
   DownloadIcon,
   FileUpIcon,
+  InfoIcon,
   LandmarkIcon,
-  ReceiptIcon,
   ListChecksIcon,
+  MergeIcon,
   PencilIcon,
   PlusIcon,
+  ReceiptIcon,
   Trash2Icon,
   UsersIcon,
   WandSparklesIcon,
-  MergeIcon,
 } from "lucide-react";
 import type { BillingPeriod, Client, ImportResult, Project, Task } from "../../shared/types";
 import { BILLING_LABEL } from "../periods";
@@ -49,6 +50,7 @@ const TABS = [
   ["taxes", "Tax profile", ReceiptIcon],
   ["import", "Import from Harvest", DownloadIcon],
   ["data", "Data", DatabaseIcon],
+  ["version", "App version", InfoIcon],
 ] as const;
 
 export default function SettingsView({ tab }: { tab: string }) {
@@ -82,6 +84,11 @@ export default function SettingsView({ tab }: { tab: string }) {
           {tab === "taxes" && <TaxProfileSettings />}
           {tab === "import" && <HarvestImport />}
           {tab === "data" && <DataTools />}
+          {tab === "version" && (
+            <Section title="App version" intro="Which version you're running, and whether a newer one is out.">
+              <VersionCard />
+            </Section>
+          )}
         </div>
       </div>
     </div>
@@ -1072,8 +1079,7 @@ function DataTools() {
     : [];
 
   return (
-    <Section title="Data" intro="Your version, backups, sample data, and starting fresh.">
-      <VersionCard />
+    <Section title="Data" intro="Backups, sample data, and starting fresh.">
       <Backups />
 
       <Card>
