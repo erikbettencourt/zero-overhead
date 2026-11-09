@@ -1,0 +1,62 @@
+# Opens (or updates) an issue listing the tax figures a year still needs, so a person adds them
+# from the official sources. Figures are never fetched or changed automatically.
+#
+# - Late November: next year's federal figures (the IRS publishes them in October or November).
+# - Mid February: this year's state figures (the Tax Foundation table comes out in February).
+name: Tax figures
+
+on:
+  schedule:
+    - cron: "17 14 20 11 *" # Nov 20, 14:17 UTC
+    - cron: "17 14 15 2 *" # Feb 15, 14:17 UTC
+  workflow_dispatch:
+    inputs:
+      year:
+        description: Tax year to check (blank for the next one due)
+        required: false
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: List what's missing
+        id: missing
+        run: |
+          YEAR="${{ github.event.inputs.year }}"
+          if [ -z "$YEAR" ]; then
+            # From July on, look ahead to next year; before that, this year.
+            if [ "$(date -u +%-m)" -ge 7 ]; then YEAR=$(( $(date -u +%Y) + 1 )); else YEAR=$(date -u +%Y); fi
+          fi
+          npx esbuild scripts/tax-figures.ts --bundle --platform=node --format=esm --outfile=.tax-figures.mjs --log-level=warning
+          node .tax-figures.mjs "$YEAR" > missing.md
+          echo "year=$YEAR" >> "$GITHUB_OUTPUT"
+
+      - name: Open or update the issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          YEAR: ${{ steps.missing.outputs.year }}
+        run: |
+          if [ ! -s missing.md ]; then
+            echo "Nothing missing for $YEAR."
+            exit 0
+          fi
+          TITLE="Tax figures for $YEAR"
+          NUMBER=$(gh issue list --state open --search "\"$TITLE\" in:title" --json number,title --jq ".[] | select(.title == \"$TITLE\") | .number" | head -1)
+          if [ -n "$NUMBER" ]; then
+            gh issue edit "$NUMBER" --body-file missing.md
+          else
+            gh issue create --title "$TITLE" --body-file missing.md
+          fi

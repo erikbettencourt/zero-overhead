@@ -37,6 +37,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { BankAccounts, SpendingRules } from "./BankSettings";
 import { TaxProfileSettings } from "./TaxSettings";
+import { VersionCard } from "./VersionCard";
 
 const TABS = [
   ["business", "Your business", BuildingIcon],
@@ -1071,7 +1072,8 @@ function DataTools() {
     : [];
 
   return (
-    <Section title="Data" intro="Backups, sample data, and starting fresh.">
+    <Section title="Data" intro="Your version, backups, sample data, and starting fresh.">
+      <VersionCard />
       <Backups />
 
       <Card>
