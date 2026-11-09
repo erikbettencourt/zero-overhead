@@ -21,6 +21,8 @@ permissions:
 
 jobs:
   check:
+    # Only in the main repo, not in copies people deploy from.
+    if: github.repository == 'erikbettencourt/zero-overhead'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
