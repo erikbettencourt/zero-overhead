@@ -1,7 +1,7 @@
 {
   "name": "zero-overhead",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "The freelance back office you own. Hours, invoices, spending and quarterly taxes, running in your own Cloudflare account.",
   "license": "MIT",
   "type": "module",
@@ -39,5 +39,24 @@
     "vite": "^8.3.5",
     "vitest": "^5.1.0",
     "wrangler": "^4.157.0"
+  },
+  "cloudflare": {
+    "bindings": {
+      "TEAM_DOMAIN": {
+        "description": "Your Cloudflare Access team domain, like `https://yourteam.cloudflareaccess.com`. See [setup step 1](https://github.com/erikbettencourt/zero-overhead/blob/main/docs/setup.md#1-set-up-cloudflare-access-the-login)."
+      },
+      "POLICY_AUD": {
+        "description": "The Application Audience (AUD) Tag of the Access application you made for this app."
+      },
+      "ALLOWED_EMAILS": {
+        "description": "Your email address: the only one allowed in. Separate several with commas."
+      },
+      "DB": {
+        "description": "Your data: clients, hours, invoices, transactions and settings."
+      },
+      "BACKUPS": {
+        "description": "Nightly backups of the database."
+      }
+    }
   }
 }
