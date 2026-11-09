@@ -1,0 +1,36 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "zero-overhead",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    // Every request, including static files, goes through the Worker's login check first.
+    "run_worker_first": true
+  },
+  // No public *.workers.dev or preview addresses: the only way in is your own
+  // domain, behind Cloudflare Access.
+  "workers_dev": false,
+  "preview_urls": false,
+  // TEAM_DOMAIN, POLICY_AUD and ALLOWED_EMAILS are set per deployment in the
+  // Cloudflare dashboard (Worker > Settings > Variables). Keep them across deploys.
+  "keep_vars": true,
+  "observability": { "enabled": true },
+  // Nightly backup and bank sync at 09:17 UTC. Cron times are always UTC; change it to suit your time zone.
+  "triggers": { "crons": ["17 9 * * *"] },
+  // PLAID_CLIENT_ID, PLAID_SECRET and BANK_TOKEN_KEY are secrets, also set in the dashboard. Leave PLAID_ENV unset
+  // for real banks; set it to "sandbox" to try Plaid's test bank instead.
+  // Nightly backups. Create a bucket with this name in Cloudflare R2 before deploying.
+  "r2_buckets": [{ "binding": "BACKUPS", "bucket_name": "zero-overhead-backups" }],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "zero-overhead",
+      // Your own database's ID (Cloudflare dashboard > D1). Each deployment has its own.
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ]
+}

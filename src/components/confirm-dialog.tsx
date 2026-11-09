@@ -1,0 +1,51 @@
+import { useState, type ReactNode } from "react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+
+/** Ask before doing something you can't easily take back. Replaces the browser's confirm(). */
+export function ConfirmDialog({
+  trigger,
+  title,
+  description,
+  confirmLabel,
+  destructive = true,
+  onConfirm,
+}: {
+  trigger: ReactNode;
+  title: string;
+  description: ReactNode;
+  confirmLabel: string;
+  destructive?: boolean;
+  onConfirm: () => Promise<unknown> | void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant={destructive ? "destructive" : "default"}
+            disabled={busy}
+            onClick={async () => {
+              setBusy(true);
+              await onConfirm();
+              setBusy(false);
+              setOpen(false);
+            }}
+          >
+            {confirmLabel}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

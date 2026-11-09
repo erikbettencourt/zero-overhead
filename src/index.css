@@ -1,0 +1,189 @@
+@import "@fontsource-variable/atkinson-hyperlegible-next";
+@import "tailwindcss";
+
+/*
+ * Zero Overhead design tokens, using shadcn/ui's variable names so its components drop straight in.
+ * One quiet neutral palette, dark ink for actions, and a single blue that only ever means "now"
+ * (today, this week). Light and dark follow the system setting. Invoices always print on white.
+ */
+:root {
+  --radius: 0.625rem;
+
+  --background: #f4f5f2;
+  --foreground: #1b2026;
+  --card: #ffffff;
+  --card-foreground: #1b2026;
+  --popover: #ffffff;
+  --popover-foreground: #1b2026;
+  --primary: #1b2026;
+  --primary-foreground: #ffffff;
+  --secondary: #eceee9;
+  --secondary-foreground: #1b2026;
+  --muted: #eceee9;
+  --muted-foreground: #626970;
+  --accent: #eceee9;
+  --accent-foreground: #1b2026;
+  --destructive: #b42318;
+  --destructive-foreground: #ffffff;
+  --success: #1e7a46;
+  --success-wash: #e3f3e9;
+  --border: #dde1d9;
+  --input: #cfd4cb;
+  --ring: #2b54c9;
+
+  --now: #2b54c9;
+  --now-wash: #eaf0fc;
+}
+
+@media screen and (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --background: #111417;
+    --foreground: #e9ebe7;
+    --card: #191d21;
+    --card-foreground: #e9ebe7;
+    --popover: #1e2227;
+    --popover-foreground: #e9ebe7;
+    --primary: #e9ebe7;
+    --primary-foreground: #15181b;
+    --secondary: #252a30;
+    --secondary-foreground: #e9ebe7;
+    --muted: #22272c;
+    --muted-foreground: #9aa1a8;
+    --accent: #262b31;
+    --accent-foreground: #e9ebe7;
+    --destructive: #ff8a7a;
+    --destructive-foreground: #2a0d09;
+    --success: #6fd49a;
+    --success-wash: #183324;
+    --border: #2b3137;
+    --input: #3a4148;
+    --ring: #86a8ff;
+
+    --now: #86a8ff;
+    --now-wash: #1c263b;
+  }
+  /* The invoice is a sheet of paper, whatever the theme. */
+  .invoice-doc {
+    color-scheme: light;
+    --background: #f4f5f2;
+    --foreground: #1b2026;
+    --card: #ffffff;
+    --card-foreground: #1b2026;
+    --primary: #1b2026;
+    --primary-foreground: #ffffff;
+    --input: #cfd4cb;
+    --muted: #eceee9;
+    --muted-foreground: #626970;
+    --border: #dde1d9;
+    --destructive: #b42318;
+    --now: #2b54c9;
+    color: var(--foreground);
+  }
+}
+
+@theme inline {
+  --font-sans: "Atkinson Hyperlegible Next Variable", ui-sans-serif, system-ui, sans-serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-wash: var(--success-wash);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-now: var(--now);
+  --color-now-wash: var(--now-wash);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  html {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  input,
+  select,
+  textarea,
+  button {
+    font: inherit;
+    color: inherit;
+  }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+/* Figures that line up in columns: hours, money, dates. */
+/* Invoices are set in Helvetica, like the Harvest invoices clients already know, and print their shading. */
+.invoice-doc {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+@utility num {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Printing an invoice: letter paper, real margins, white page, no app chrome. */
+@page {
+  size: letter;
+  margin: 0.55in 0.6in 0.7in;
+  @bottom-center {
+    content: "Page " counter(page) " of " counter(pages);
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 10px;
+  }
+}
+
+@media print {
+  html,
+  body {
+    background: #fff;
+    font-size: 12px;
+  }
+  .invoice-doc {
+    max-width: none;
+  }
+  [data-sonner-toaster] {
+    display: none !important;
+  }
+}
