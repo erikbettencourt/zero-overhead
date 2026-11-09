@@ -103,7 +103,7 @@ function Shell() {
           </nav>
           <div className="ml-auto flex items-center gap-4">
             {data.version.updateAvailable && (
-              <a href="#/settings/data" className="flex items-center gap-1.5 text-sm font-semibold text-now underline-offset-2 hover:underline">
+              <a href="#/settings/version" className="flex items-center gap-1.5 text-sm font-semibold text-now underline-offset-2 hover:underline">
                 <span aria-hidden="true" className="size-2 rounded-full bg-now" />
                 Update available
               </a>
