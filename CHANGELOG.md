@@ -2,6 +2,12 @@
 
 Each version's changes, newest first. The app checks this repo's version every night and shows **Update available** in the header when there's a newer one. To update, bring the latest changes into your copy of the code on GitHub; Cloudflare deploys them as usual.
 
+## 0.2.4
+
+- **The next tax payment shows what to pay.** On Taxes, the Due next row now matches the amount at the top: the quarter's share, plus any shortfall from earlier quarters, less any overpayment. The share itself shows underneath.
+- **Short says which.** A quarter where only one payment fell short says "Federal short" or, for example, "CO short".
+- The note under the table explains overpaying as well as underpaying.
+
 ## 0.2.3
 
 - **Spending is now Transactions.** The page holds every bank and card transaction, money in and out, so it's named for that. Its address stays `#/spending`, so bookmarks still work. Settings › Spending rules is now Transaction rules.

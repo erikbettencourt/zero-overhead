@@ -6,6 +6,7 @@ import { api } from "../api";
 import { niceDate } from "../format";
 import { useAction, useData } from "../state";
 import { cn } from "@/lib/utils";
+import { quarterAmounts, shortLabel } from "../taxQuarters";
 import { DatePicker } from "@/components/date-picker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -177,10 +178,11 @@ const STATUS: Record<TaxQuarter["status"], { label: string; variant: "success" |
   upcoming: { label: "Upcoming", variant: "outline" },
 };
 
-function Amount({ estimate, paid }: { estimate: number; paid: number }) {
+function Amount({ estimate, paid, share }: { estimate: number; paid: number; share?: number | null }) {
   return (
     <div className="num text-right">
       <p className="font-semibold">{formatMoney(estimate)}</p>
+      {share != null && <p className="text-xs text-muted-foreground">Quarter's share {formatMoney(share)}</p>}
       {paid > 0 && <p className={cn("text-xs", paid >= estimate ? "text-success" : "text-muted-foreground")}>Paid {formatMoney(paid)}</p>}
     </div>
   );
@@ -200,26 +202,30 @@ function Quarters({ summary: s }: { summary: TaxSummary }) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {s.quarters.map((q) => (
-            <TableRow key={q.quarter} className="align-top">
-              <TableCell className="pt-3 pl-5 font-semibold">{QUARTER_LABEL[q.quarter]}</TableCell>
-              <TableCell className="num pt-3">{niceDate(q.dueOn)}</TableCell>
-              <TableCell className="pt-3">
-                <Amount estimate={q.federal.estimateCents} paid={q.federal.paidCents} />
-              </TableCell>
-              <TableCell className="pt-3">
-                <Amount estimate={q.state.estimateCents} paid={q.state.paidCents} />
-              </TableCell>
-              <TableCell className="pt-3 pr-5 text-right">
-                <Badge variant={STATUS[q.status].variant}>{STATUS[q.status].label}</Badge>
-              </TableCell>
-            </TableRow>
-          ))}
+          {s.quarters.map((q) => {
+            const shown = quarterAmounts(s, q);
+            const isNext = shown.federalShareCents != null || shown.stateShareCents != null;
+            return (
+              <TableRow key={q.quarter} className="align-top">
+                <TableCell className="pt-3 pl-5 font-semibold">{QUARTER_LABEL[q.quarter]}</TableCell>
+                <TableCell className="num pt-3">{niceDate(q.dueOn)}</TableCell>
+                <TableCell className="pt-3">
+                  <Amount estimate={shown.federalCents} paid={isNext ? 0 : q.federal.paidCents} share={shown.federalShareCents} />
+                </TableCell>
+                <TableCell className="pt-3">
+                  <Amount estimate={shown.stateCents} paid={isNext ? 0 : q.state.paidCents} share={shown.stateShareCents} />
+                </TableCell>
+                <TableCell className="pt-3 pr-5 text-right">
+                  <Badge variant={STATUS[q.status].variant}>{q.status === "past due" ? shortLabel(q, s.state) : STATUS[q.status].label}</Badge>
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
-      {s.quarters.some((q) => q.status === "past due") && (
+      {s.quarters.some((q) => q.status === "past due" || q.federal.paidCents > q.federal.estimateCents + 100 || q.state.paidCents > q.state.estimateCents + 100) && (
         <p className="border-t px-5 py-3 text-sm text-muted-foreground">
-          A quarter comes up short when your income grew after you paid it. The difference is added to your next payment.
+          Paid more or less than a quarter's share? The difference comes off or goes onto your next payment. A quarter can also come up short when your income grew after you paid it.
         </p>
       )}
       {s.safeHarbor && (
