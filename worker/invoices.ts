@@ -395,10 +395,10 @@ export const invoiceRoutes: Route[] = [
       for (const k of ["issuedOn", "dueOn", "paidOn"]) {
         if (k in b && b[k] !== null && !isIsoDate(b[k])) throw badRequest(`${k} must be a date.`);
       }
-      // With a bank connected, an invoice is paid by matching its deposit in Spending, so the
+      // With a bank connected, an invoice is paid by matching its deposit in Transactions, so the
       // paid date is the day the money arrived and the deposit isn't counted twice.
       if (status === "paid" && row.status !== "paid" && (await hasBankAccounts(db))) {
-        throw conflict("Match the deposit that paid this invoice in Spending. That marks it paid on the day the money arrived.");
+        throw conflict("Match the deposit that paid this invoice in Transactions. That marks it paid on the day the money arrived.");
       }
       if (b.paidOn !== undefined && row.deposit_id != null) throw conflict("This invoice's paid date is the day its deposit arrived.");
       const nextStatus = status ?? (row.status as InvoiceStatus);

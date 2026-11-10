@@ -3,6 +3,7 @@ import { FileSpreadsheetIcon, InfoIcon, Landmark, PlusIcon, RefreshCwIcon, Trash
 import type { BankAccount, BankOverview, BankRule, SyncResult } from "../../shared/types";
 import { api } from "../api";
 import { niceDate } from "../format";
+import { toIsoDate } from "../../shared/time";
 import { openPlaidLink } from "../plaid-link";
 import { StatementImport } from "./StatementImport";
 import { useAction, useData } from "../state";
@@ -89,7 +90,7 @@ export function BankAccounts() {
     });
     if (ok) {
       setBank((b) => b && { ...b, connections: b.connections.filter((c) => c.id !== id) });
-      notify("Disconnected. Its transactions stay in Spending.");
+      notify("Disconnected. Its transactions stay in Transactions.");
     }
   }
 
@@ -358,10 +359,10 @@ function SetupSteps() {
 
 const KIND_LABEL = { business: "Business", personal: "Personal", transfer: "Transfer" } as const;
 
-/** How many transactions the rule fits, flagging any sorted another way. Opens them in Spending. */
+/** How many transactions the rule fits, flagging any sorted another way. Opens them in Transactions. */
 function RuleMatches({ rule: r }: { rule: BankRule }) {
   if (r.matches === 0) return <span className="num text-muted-foreground">None yet</span>;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = toIsoDate(new Date());
   const href = `#/spending/all/${r.firstDate ?? today}/${today}?q=${encodeURIComponent(r.matchText)}`;
   const status =
     r.different > 0
@@ -370,7 +371,7 @@ function RuleMatches({ rule: r }: { rule: BankRule }) {
         ? { text: `${r.unsorted} to review`, tone: "text-now" }
         : { text: r.matches === 1 ? "Matches the rule" : "All match the rule", tone: "text-muted-foreground" };
   return (
-    <a href={href} className="group inline-block text-right" title="Show them in Spending">
+    <a href={href} className="group inline-block text-right" title="Show them in Transactions">
       <span className="num font-semibold group-hover:underline">{r.matches}</span>
       <span className={`block text-xs ${status.tone}`}>{status.text}</span>
     </a>
@@ -400,8 +401,8 @@ export function SpendingRules() {
   return (
     <section>
       <Header
-        title="Spending rules"
-        intro="Rules sort new transactions as they download. Make one from any transaction in Spending with the wand button. The most specific match wins."
+        title="Transaction rules"
+        intro="Rules sort new transactions as they download. Make one from any transaction in Transactions with the wand button. The most specific match wins."
       />
       {rules === null ? (
         <p className="mt-5 text-muted-foreground">Loading…</p>

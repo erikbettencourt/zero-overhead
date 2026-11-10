@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CheckCircle2Icon, FileSpreadsheetIcon, FileUpIcon, Landmark, RefreshCwIcon, SearchIcon, Undo2Icon, WandSparklesIcon, XIcon } from "lucide-react";
+import { CheckCircle2Icon, ChevronDownIcon, DownloadIcon, FileSpreadsheetIcon, FileUpIcon, Landmark, RefreshCwIcon, SearchIcon, Undo2Icon, WandSparklesIcon, XIcon } from "lucide-react";
 import type { BankOverview, BankTransaction, InvoiceRef, InvoiceSummary, SpendingSummary, TransactionKind } from "../../shared/types";
 import { formatMoney, toIsoDate } from "../../shared/time";
 import { api } from "../api";
@@ -16,11 +16,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Empty, Stat } from "./Reports";
 import { DateMenu } from "./DateMenu";
 import { QuickBooksImport } from "./QuickBooksImport";
 import { StatementImport } from "./StatementImport";
 import { CategoryItems, useMarkCategoryUsed } from "./CategoryItems";
+import { suggestMatch } from "../rules";
 
 export type SpendingView = "review" | "business" | "personal" | "transfer" | "all";
 const VIEWS: [SpendingView, string][] = [
@@ -55,7 +57,7 @@ export default function SpendingView({ view, from, to, initialSearch = "" }: { v
   // Search and the category filter. The search box waits a moment for typing to stop.
   const [search, setSearch] = useState(initialSearch);
   const [q, setQ] = useState(initialSearch);
-  const [categoryId, setCategoryId] = useState<number | "none" | undefined>();
+  const [categoryId, setCategoryId] = useState<number | "none" | "income" | undefined>();
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const lastClicked = useRef<number | null>(null);
 
@@ -144,30 +146,49 @@ export default function SpendingView({ view, from, to, initialSearch = "" }: { v
     <div>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Spending</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Transactions</h1>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            Mark each transaction business or {hasBusinessAccounts ? "personal, or a transfer between your accounts" : "personal"}. Only business spending counts toward your taxes.
+            Sort each one business or {hasBusinessAccounts ? "personal, or a transfer between your accounts" : "personal"}. Only business spending counts toward your taxes.
           </p>
         </div>
         {bank && (
-          <div className="flex flex-wrap items-center gap-3">
-            {lastSynced && <span className="text-sm text-muted-foreground">Synced {niceDate(lastSynced.slice(0, 10))}</span>}
-            {accounts.length > 0 && (
-              <Button variant="outline" onClick={() => setImporting(true)}>
-                <FileUpIcon />
-                Import from QuickBooks
-              </Button>
-            )}
-            <Button variant="outline" onClick={() => setStatement(true)}>
-              <FileSpreadsheetIcon />
-              Import statement
-            </Button>
+          <div className="flex flex-wrap items-center gap-3 sm:ml-auto">
             {bank.connections.length > 0 && (
-              <Button variant="outline" onClick={() => void sync()} disabled={syncing}>
-                <RefreshCwIcon className={cn(syncing && "animate-spin")} />
-                {syncing ? "Syncing…" : "Sync now"}
-              </Button>
+              <div className="flex items-center gap-3">
+                {lastSynced && <span className="text-sm text-muted-foreground">Synced {syncedLabel(lastSynced)}</span>}
+                <Button variant="outline" onClick={() => void sync()} disabled={syncing}>
+                  <RefreshCwIcon className={cn(syncing && "animate-spin")} />
+                  {syncing ? "Syncing…" : "Sync now"}
+                </Button>
+              </div>
             )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                  <DownloadIcon />
+                  Import
+                  <ChevronDownIcon className="text-muted-foreground" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onSelect={() => setStatement(true)}>
+                  <FileSpreadsheetIcon />
+                  <span>
+                    <span className="block font-semibold">Bank statement</span>
+                    <span className="block text-xs text-muted-foreground">A CSV file from your bank or card</span>
+                  </span>
+                </DropdownMenuItem>
+                {accounts.length > 0 && (
+                  <DropdownMenuItem onSelect={() => setImporting(true)}>
+                    <FileUpIcon />
+                    <span>
+                      <span className="block font-semibold">From QuickBooks</span>
+                      <span className="block text-xs text-muted-foreground">Your history and how you sorted it</span>
+                    </span>
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         )}
       </div>
@@ -224,12 +245,13 @@ export default function SpendingView({ view, from, to, initialSearch = "" }: { v
         ) : (
           <DateMenu range={range} onChange={(r) => go(view, r)} />
         )}
-        <Select value={categoryId === undefined ? "all" : String(categoryId)} onValueChange={(v) => setCategoryId(v === "all" ? undefined : v === "none" ? "none" : Number(v))}>
+        <Select value={categoryId === undefined ? "all" : String(categoryId)} onValueChange={(v) => setCategoryId(v === "all" ? undefined : v === "none" || v === "income" ? v : Number(v))}>
           <SelectTrigger className="w-full sm:w-44 [&>span]:truncate" aria-label="Category">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All categories</SelectItem>
+            <SelectItem value="income">Income</SelectItem>
             <SelectItem value="none">Business, no category yet</SelectItem>
             <CategoryItems current={typeof categoryId === "number" ? categoryId : null} />
           </SelectContent>
@@ -735,17 +757,19 @@ function TxnRow({
   );
 }
 
-/** Suggest the merchant, or the first words of the bank's description, as the text to match. */
-function suggestMatch(t: BankTransaction) {
-  if (t.merchantName) return t.merchantName;
-  return t.name
-    .replace(/[#*].*$/, "")
-    .replace(/\b\d{3,}\b.*$/, "")
-    .trim()
-    .split(/\s+/)
-    .slice(0, 3)
-    .join(" ");
+/** "today, 9:17 AM", "yesterday, 9:17 AM" or "Nov 3, 9:17 AM", from the database's UTC timestamp. */
+function syncedLabel(stamp: string) {
+  const at = new Date(stamp.replace(" ", "T") + (/[zZ]|[+-]\d\d:?\d\d$/.test(stamp) ? "" : "Z"));
+  if (Number.isNaN(at.getTime())) return niceDate(stamp.slice(0, 10));
+  const time = at.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  const day = toIsoDate(at);
+  const today = new Date();
+  const yesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
+  if (day === toIsoDate(today)) return `today, ${time}`;
+  if (day === toIsoDate(yesterday)) return `yesterday, ${time}`;
+  return `${niceDate(day, { month: "short", day: "numeric" })}, ${time}`;
 }
+
 
 function RuleDialog({ txn, onDone }: { txn: BankTransaction; onDone: (applied: number) => void }) {
   const run = useAction();

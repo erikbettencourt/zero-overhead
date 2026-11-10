@@ -161,7 +161,7 @@ export default function TaxesView({ year }: { year: number }) {
 
           <p className="mt-6 text-xs text-muted-foreground">
             An estimate, not tax advice. It covers self-employment tax, the standard deduction, the 20% qualified business income deduction, federal brackets, and your
-            state's rates, deductions and exemptions. It includes health insurance premiums marked in Spending, but doesn't know about credits, itemized deductions or
+            state's rates, deductions and exemptions. It includes health insurance premiums marked in Transactions, but doesn't know about credits, itemized deductions or
             retirement contributions, so check it against your accountant.
           </p>
         </>

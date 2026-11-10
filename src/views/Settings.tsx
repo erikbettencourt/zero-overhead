@@ -46,7 +46,7 @@ const TABS = [
   ["projects", "Projects", BriefcaseIcon],
   ["tasks", "Tasks", ListChecksIcon],
   ["bank", "Bank accounts", LandmarkIcon],
-  ["rules", "Spending rules", WandSparklesIcon],
+  ["rules", "Transaction rules", WandSparklesIcon],
   ["taxes", "Tax profile", ReceiptIcon],
   ["import", "Import from Harvest", DownloadIcon],
   ["data", "Data", DatabaseIcon],
