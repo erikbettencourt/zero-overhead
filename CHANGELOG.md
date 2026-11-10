@@ -2,6 +2,13 @@
 
 Each version's changes, newest first. The app checks this repo's version every night and shows **Update available** in the header when there's a newer one. To update, bring the latest changes into your copy of the code on GitHub; Cloudflare deploys them as usual.
 
+## 0.2.2
+
+- **Restoring a backup keeps your transfers.** Before, a restore turned every transaction and rule marked Transfer into Personal.
+- **Restores check the backup fits.** Backups now record their database version, and a restore stops before changing anything if the backup is from a newer version than the app. Backup files with unexpected column names are refused.
+- **Taxes use your date, not the server's.** In the evening the server's clock (UTC) is already on tomorrow, which could move a payment due date or the year a little early.
+- **For contributors:** every pull request is now type-checked, built and tested (CI), packages are updated monthly by pull request, and [SECURITY.md](SECURITY.md) says how to report a security problem privately.
+
 ## 0.2.1
 
 - **Docs.** A step-by-step [setup guide](docs/setup.md) with the Deploy to Cloudflare button, [bank and card transactions](docs/bank.md) with or without Plaid, [staying up to date](docs/updating.md), [tax figures](docs/tax-figures.md), and [CONTRIBUTING.md](CONTRIBUTING.md).

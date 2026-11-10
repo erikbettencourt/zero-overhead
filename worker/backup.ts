@@ -27,6 +27,8 @@ export interface Backup {
   app: "Zero Overhead";
   version: 1;
   exportedAt: string;
+  /** The last database migration applied when it was made, like "0014_imported_accounts.sql". */
+  schema?: string | null;
   /** Whether bank logins are included (only ever encrypted ones). */
   includesBankLogins: boolean;
   data: Record<string, Record<string, unknown>[]>;
@@ -53,7 +55,17 @@ export async function exportAll(db: D1Database, opts: { includeSealedBankLogins?
     const { access_token: _dropped, ...rest } = item;
     return rest;
   });
-  return { app: "Zero Overhead", version: 1, exportedAt: new Date().toISOString(), includesBankLogins, data };
+  return { app: "Zero Overhead", version: 1, exportedAt: new Date().toISOString(), schema: await schemaVersion(db), includesBankLogins, data };
+}
+
+/** The last migration Wrangler applied, so a restore can tell whether the backup fits this database. */
+async function schemaVersion(db: D1Database): Promise<string | null> {
+  try {
+    const row = await db.prepare("SELECT max(name) AS name FROM d1_migrations").first<{ name: string | null }>();
+    return row?.name ?? null;
+  } catch {
+    return null;
+  }
 }
 
 const day = (d: Date) => d.toISOString().slice(0, 10);

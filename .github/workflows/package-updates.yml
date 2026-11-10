@@ -1,0 +1,58 @@
+# Once a month, update packages within the versions package.json allows, run the tests and
+# the build, and open a pull request if anything changed. Major versions are left for a person.
+#
+# This runs in the main repository only. (Dependabot can't be limited that way, so copies
+# people deploy from would get its pull requests too, and they'd clash with updates.)
+name: Package updates
+
+on:
+  schedule:
+    - cron: "23 13 3 * *" # the 3rd of each month, 13:23 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    if: github.repository == 'erikbettencourt/zero-overhead'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      - run: npm update
+
+      - name: Stop if nothing changed
+        id: changed
+        run: |
+          if git diff --quiet -- package.json package-lock.json; then
+            echo "Everything is up to date."
+            echo "any=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "any=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # A pull request opened by this workflow doesn't start CI on its own, so check here.
+      - if: steps.changed.outputs.any == 'true'
+        run: npm audit --omit=dev --audit-level=high && npm run build && npm test
+
+      - name: Open or update the pull request
+        if: steps.changed.outputs.any == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B package-updates
+          git commit -am "Update packages"
+          git push --force origin package-updates
+          if [ "$(gh pr list --head package-updates --state open --json number --jq length)" = "0" ]; then
+            gh pr create --base main --head package-updates --title "Update packages" \
+              --body "Monthly package updates within the allowed versions. Tests, build and audit passed in the workflow run. Check the lockfile diff, then merge."
+          fi

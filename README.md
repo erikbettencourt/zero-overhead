@@ -65,6 +65,8 @@ node scripts/restore.mjs backup.json > restore.sql
 npx wrangler d1 execute zero-overhead --remote --file restore.sql
 ```
 
+A backup knows which version of the database it came from. If it's newer than your app, the restore stops before changing anything with `backup_is_from_a_newer_version_update_the_app_first`: update the app, then run it again.
+
 To rehearse first, run step 2 with `--local` instead of `--remote`, then `npm run dev` and look around. Nightly backups include the encrypted bank logins, so banks keep syncing after a restore as long as `BANK_TOKEN_KEY` is unchanged. A downloaded copy leaves them out, so after restoring from one, connect each bank again.
 
 ## Development
