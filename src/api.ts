@@ -103,7 +103,7 @@ export const api = {
   importStatement: (id: number, body: { columns: StatementColumns; rows: StatementRow[] }) =>
     request<StatementImportResult>("POST", `/api/bank/accounts/${id}/import`, body),
 
-  transactions: (q: { view: string; from?: string; to?: string; accountId?: number; q?: string; categoryId?: number | "none" }) =>
+  transactions: (q: { view: string; from?: string; to?: string; accountId?: number; q?: string; categoryId?: number | "none" | "income" }) =>
     request<BankTransaction[]>(
       "GET",
       `/api/transactions?${new URLSearchParams(Object.entries(q).filter(([, v]) => v !== undefined).map(([k, v]) => [k, String(v)]))}`,

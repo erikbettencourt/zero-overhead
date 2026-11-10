@@ -53,7 +53,7 @@ If you see "Access is not configured for this app", one of the three variables i
 - **Settings › Clients and Projects:** who you work for, with their hourly rates and billing periods.
 - **Want to look around first?** Settings › Data › Load sample data adds two fictional clients and a few weeks of hours. Erase it from the same page when you're ready to start for real; your settings stay.
 
-Coming from Harvest or QuickBooks Self-Employed? Settings › Import from Harvest brings over your hours and invoice history, and Spending › Import from QuickBooks brings over how you sorted your transactions.
+Coming from Harvest or QuickBooks Self-Employed? Settings › Import from Harvest brings over your hours and invoice history, and Transactions › Import › From QuickBooks brings over how you sorted your transactions.
 
 ## 5. Bring in your money
 
