@@ -1,4 +1,5 @@
 import type { QbImportRequest, QbImportResult, TaxPayment, TaxProfile, TaxSummary, VersionInfo, YearEndSummary, StatementColumns, StatementRow, StatementImportResult, Jurisdiction, BankOverview, BankRule, BankTransaction, SpendingSummary, SyncResult, TransactionKind, Summary, Bootstrap, Business, Client, HarvestRow, ImportResult, InvoiceDetail, InvoiceStatus, InvoiceSummary, Project, ProjectTask, Report, Task, TimeEntry, Timer } from "../shared/types";
+import { toIsoDate } from "../shared/time";
 
 export class ApiError extends Error {
   constructor(
@@ -121,9 +122,10 @@ export const api = {
     request<{ rule: BankRule; applied: number }>("POST", "/api/rules", body),
   deleteRule: (id: number) => request<void>("DELETE", `/api/rules/${id}`),
 
-  taxes: (year: number) => request<TaxSummary>("GET", `/api/taxes/${year}`),
+  // Today's date as you see it, not the server's (which is UTC, and a day ahead most evenings).
+  taxes: (year: number) => request<TaxSummary>("GET", `/api/taxes/${year}?today=${toIsoDate(new Date())}`),
   checkForUpdate: () => request<VersionInfo>("POST", "/api/version/check", {}),
-  yearEnd: (year: number) => request<YearEndSummary>("GET", `/api/taxes/${year}/year-end`),
+  yearEnd: (year: number) => request<YearEndSummary>("GET", `/api/taxes/${year}/year-end?today=${toIsoDate(new Date())}`),
   taxProfile: () => request<TaxProfile>("GET", "/api/tax-profile"),
   saveTaxProfile: (body: Partial<TaxProfile>) => request<TaxProfile>("PUT", "/api/tax-profile", body),
   recordTaxPayment: (body: { taxYear: number; jurisdiction: Jurisdiction; quarter: number; paidOn: string; amountCents: number; appliedRefund: boolean; note?: string | null }) =>

@@ -155,7 +155,13 @@ describe("restore", () => {
     const vault = await vaultFromKey(KEY);
     await db.prepare("INSERT INTO bank_items (plaid_item_id, access_token, institution_name, cursor) VALUES ('item-1', ?, 'Example Bank', 'cur-1')").bind(await vault.seal("access-1")).run();
 
+    // A transfer and a transfer rule must come back as transfers.
+    await db.prepare("UPDATE bank_transactions SET kind = 'transfer', category_id = NULL WHERE id = (SELECT min(id) FROM bank_transactions WHERE amount_cents < 0)").run();
+    await db.prepare("INSERT INTO bank_rules (match_text, kind) VALUES ('ONLINE TRANSFER', 'transfer')").run();
+
     const before = await exportAll(db, { includeSealedBankLogins: true });
+    expect(before.schema).toMatch(/^\d{4}_.+\.sql$/);
+    expect(before.data.bank_transactions.filter((t) => t.kind === "transfer")).toHaveLength(1);
     expect(before.data.time_entries.length).toBeGreaterThan(20);
     expect(before.data.invoices.length).toBe(1);
 
@@ -179,5 +185,23 @@ describe("restore", () => {
 
   it("refuses a file that isn't a backup", () => {
     expect(() => restoreStatements({ hello: "world" })).toThrow(/isn't a Zero Overhead backup/);
+  });
+
+  it("refuses a backup from a newer version, before changing anything", async () => {
+    const backup = await exportAll(db);
+    const clients = backup.data.clients.length;
+    const statements = restoreStatements({ ...backup, schema: "9999_from_the_future.sql", data: { clients: [] } }) as string[];
+    await expect(
+      (async () => {
+        for (const sql of statements) await db.prepare(sql).run();
+      })(),
+    ).rejects.toThrow(/backup_is_from_a_newer_version_update_the_app_first/);
+    expect((await exportAll(db)).data.clients).toHaveLength(clients);
+    await db.prepare("DROP TABLE IF EXISTS restore_check").run();
+  });
+
+  it("refuses column names that aren't plain names", () => {
+    const backup = { app: "Zero Overhead", version: 1, data: { clients: [{ id: 1, "name) VALUES (1); DROP TABLE clients; --": "x" }] } };
+    expect(() => restoreStatements(backup)).toThrow(/column name that isn't allowed/);
   });
 });
