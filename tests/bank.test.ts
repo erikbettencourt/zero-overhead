@@ -347,6 +347,17 @@ describe("bank connections", () => {
     const inOffice = (await call<BankTransaction[]>("GET", `/api/transactions?${oct}&categoryId=${office}`)).data;
     expect(inOffice.map((t) => t.name).sort()).toEqual(["ADOBE CREATIVE CLOUD", "AMAZON WEB SERVICES"]);
 
+    // Income: business money in without a category; a refund keeps the category it reverses.
+    await db.batch([
+      db.prepare("INSERT INTO bank_transactions (account_id, date, name, amount_cents, kind) SELECT id, '2026-10-20', 'CLIENT PAYMENT', 500000, 'business' FROM bank_accounts WHERE plaid_account_id = 'acc-check'"),
+      db.prepare("INSERT INTO bank_transactions (account_id, date, name, amount_cents, kind, category_id) SELECT id, '2026-10-21', 'ADOBE REFUND', 2000, 'business', ? FROM bank_accounts WHERE plaid_account_id = 'acc-check'").bind(office),
+    ]);
+    const income = (await call<BankTransaction[]>("GET", `/api/transactions?view=business&from=2026-10-01&to=2026-10-31&categoryId=income`)).data;
+    expect(income.map((t) => t.name)).toContain("CLIENT PAYMENT");
+    expect(income.map((t) => t.name)).not.toContain("ADOBE REFUND");
+    expect(income.every((t) => t.amountCents > 0 && t.kind === "business" && t.categoryId === null)).toBe(true);
+    await db.prepare("DELETE FROM bank_transactions WHERE name IN ('CLIENT PAYMENT', 'ADOBE REFUND')").run();
+
     // To review can be narrowed to dates.
     await db.batch(
       ["2025-06-01", "2026-06-01"].map((d) =>

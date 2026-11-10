@@ -20,7 +20,7 @@ The keys stay in Cloudflare. They're never in the code, in your GitHub copy, or 
 
 Most banks and card issuers let you download transactions as a CSV file (sometimes called "Excel" or "spreadsheet" format).
 
-1. In the app, open **Spending › Import statement** (or **Settings › Bank accounts › Import a statement**).
+1. In the app, open **Transactions › Import › Bank statement** (or **Settings › Bank accounts › Import a statement**).
 2. Choose **New account…**, give it a name, and choose bank account or credit card.
 3. Choose the CSV file. The app works out which columns hold the date, description and amount, and which way round the amounts are (card exports often show charges as positive numbers). Check the preview: charges should show as money out. Change any column if it guessed wrong; the account remembers them for next time.
 4. Import.
@@ -33,4 +33,4 @@ Each transaction is **business** or **personal**. Business spending needs a cate
 
 - **Rules** sort the regulars: on any transaction, the wand button makes a rule from it ("anything containing ADOBE is business, Office expense"). Rules apply to past transactions they fit and to every new one.
 - **Business accounts.** For an account that holds only business money, turn on **Business account** in Settings › Bank accounts. Its charges come in as business, and money moved between your own accounts (owner draws, money you put in, card payments) can be marked **Transfer**, which is neither income nor spending.
-- **Deposits that paid an invoice** get a suggestion ("Looks like payment for 1042") in Spending. Accept it, and the invoice is marked paid on the day the money arrived.
+- **Deposits that paid an invoice** get a suggestion ("Looks like payment for 1042") in Transactions. Accept it, and the invoice is marked paid on the day the money arrived.

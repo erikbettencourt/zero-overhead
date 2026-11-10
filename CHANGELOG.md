@@ -2,6 +2,14 @@
 
 Each version's changes, newest first. The app checks this repo's version every night and shows **Update available** in the header when there's a newer one. To update, bring the latest changes into your copy of the code on GitHub; Cloudflare deploys them as usual.
 
+## 0.2.3
+
+- **Spending is now Transactions.** The page holds every bank and card transaction, money in and out, so it's named for that. Its address stays `#/spending`, so bookmarks still work. Settings › Spending rules is now Transaction rules.
+- **A tidier header.** Sync now sits beside when it last synced (with the time), and one **Import** menu holds Bank statement and From QuickBooks, all on the right.
+- **Filter by Income.** The category filter has Income, so Business › Income shows the business money that came in.
+- **Better rule suggestions for bank transfers.** The wand now suggests just the company for ACH payments ("Acme Co", not "Acme Co DES:Bill"), so a rule keeps matching when the payer changes their note. If you made a rule from one before, check it in Settings › Transaction rules.
+- A rule's match count now opens Transactions through your local date, not the server's.
+
 ## 0.2.2
 
 - **Restoring a backup keeps your transfers.** Before, a restore turned every transaction and rule marked Transfer into Personal.

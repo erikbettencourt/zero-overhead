@@ -16,13 +16,13 @@ Not supported yet: fixed-fee projects, deposits and payment schedules, and busin
 
 - **Time.** A day and week view by client, project and task, with notes on every entry. Import your history from Harvest.
 - **Reports and invoices.** Hours and earnings for any period. Invoices bill a client's uninvoiced hours, lock them, and print as a PDF with the hours report on page 2.
-- **Spending.** Transactions from your bank and cards, downloaded nightly through [Plaid](https://plaid.com) or imported from statement CSV files. Mark each one business or personal, file business spending under its Schedule C line, and let rules sort the regulars. Business-only accounts and transfers between your accounts are handled too. Import your history from QuickBooks Self-Employed.
+- **Transactions.** Everything from your bank and cards, downloaded nightly through [Plaid](https://plaid.com) or imported from statement CSV files. Mark each one business or personal, file business spending under its Schedule C line, and let rules sort the regulars. Business-only accounts and transfers between your accounts are handled too. Import your history from QuickBooks Self-Employed.
 - **Getting paid.** Match each deposit to the invoice it paid (or several, when a client pays them together). The deposit's date is the paid date, so income lands in the year the money arrived.
 - **Taxes.** Quarterly federal and state estimates for every state, from what you've been paid and what you've spent, with your payments tracked against each due date. At year end, a one-page summary for your accountant, as a PDF and a CSV.
 
-| Invoices | Spending | Taxes |
+| Invoices | Transactions | Taxes |
 | --- | --- | --- |
-| ![An invoice, laid out like a Harvest invoice](docs/images/invoice.png) | ![Spending, with transactions to review](docs/images/spending.png) | ![Quarterly tax estimates](docs/images/taxes.png) |
+| ![An invoice, laid out like a Harvest invoice](docs/images/invoice.png) | ![Transactions, with some to review](docs/images/spending.png) | ![Quarterly tax estimates](docs/images/taxes.png) |
 
 ## What it costs
 

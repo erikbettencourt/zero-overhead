@@ -92,7 +92,7 @@ function Shell() {
               Invoices
             </NavLink>
             <NavLink href="#/spending" active={route.view === "spending"}>
-              Spending
+              Transactions
             </NavLink>
             <NavLink href="#/taxes" active={route.view === "taxes" || route.view === "yearEnd"}>
               Taxes

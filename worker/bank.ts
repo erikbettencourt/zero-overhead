@@ -143,6 +143,8 @@ async function listTransactions(db: D1Database, url: URL): Promise<BankTransacti
   }
   const category = url.searchParams.get("categoryId");
   if (category === "none") where.push("t.kind = 'business' AND t.amount_cents < 0 AND t.category_id IS NULL");
+  // Income: business money in that isn't a refund (a refund carries the category it reverses).
+  else if (category === "income") where.push("t.kind = 'business' AND t.amount_cents > 0 AND t.category_id IS NULL");
   else if (category) {
     where.push("t.category_id = ?");
     binds.push(Number(category));

@@ -231,7 +231,7 @@ export function QuickBooksImport({ accounts, onDone }: { accounts: BankAccount[]
             ))}
           </Section>
 
-          <Section title="Categories" intro="What each QuickBooks category becomes. Tax payments go on the Taxes page instead of Spending.">
+          <Section title="Categories" intro="What each QuickBooks category becomes. Tax payments go on the Taxes page instead of Transactions.">
             {[...categoryRows.entries()]
               .sort((a, b) => b[1].length - a[1].length)
               .map(([category, list]) => (
