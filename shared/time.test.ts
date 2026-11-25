@@ -7,6 +7,8 @@ import {
   monthRange,
   nextInvoiceNumber,
   formatDuration,
+  formatDollars,
+  formatHm,
   isIsoDate,
   parseDuration,
   parseMoney,
@@ -43,6 +45,29 @@ describe("formatDuration", () => {
   it("leaves zero blank unless asked", () => {
     expect(formatDuration(0)).toBe("");
     expect(formatDuration(0, { blankZero: false })).toBe("0:00");
+  });
+});
+
+describe("formatHm", () => {
+  it.each([
+    [0, ""],
+    [30, "30m"],
+    [60, "1h"],
+    [90, "1h 30m"],
+    [107, "1h 47m"],
+    [1994, "33h 14m"],
+  ])("%i minutes -> %s", (minutes, text) => {
+    expect(formatHm(minutes)).toBe(text);
+  });
+  it("reads back through parseDuration", () => {
+    for (const m of [5, 30, 60, 107, 1994]) expect(parseDuration(formatHm(m))).toBe(m);
+  });
+});
+
+describe("formatDollars", () => {
+  it("rounds to whole dollars", () => {
+    expect(formatDollars(498500)).toBe("$4,985");
+    expect(formatDollars(12550)).toBe("$126");
   });
 });
 

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type KeyboardEvent } from "react";
 import { CopyIcon, NotebookPenIcon, PlusIcon } from "lucide-react";
 import type { TimeEntry } from "../../shared/types";
-import { addDays, formatDuration, parseDuration } from "../../shared/time";
+import { addDays, formatHm, parseDuration } from "../../shared/time";
 import { api } from "../api";
 import { useAction, useData } from "../state";
 import { cn } from "@/lib/utils";
@@ -205,7 +205,7 @@ export default function WeekGrid({
                           <HoursCell entries={cellEntries(k, d)} label={`${project}, ${task}, ${dayLabel(d)}`} onSave={(m) => saveCell(k, d, m)} date={d} />
                         </td>
                       ))}
-                      <td className="num px-4 py-2 text-right font-bold">{formatDuration(sum(list), { blankZero: false })}</td>
+                      <td className="num px-4 py-2 text-right font-bold whitespace-nowrap">{formatHm(sum(list))}</td>
                     </tr>,
                   ];
                 })}
@@ -216,11 +216,11 @@ export default function WeekGrid({
                   <td className="sticky left-0 z-10 bg-muted px-4 py-2.5 font-semibold text-muted-foreground">Total</td>
                   <td />
                   {days.map((d) => (
-                    <td key={d} className={cn("num px-2 py-2.5 text-right font-bold", d === today && "bg-now-wash", !dayTotal(d) && "text-muted-foreground")}>
-                      {formatDuration(dayTotal(d), { blankZero: false })}
+                    <td key={d} className={cn("num px-2 py-2.5 text-right font-bold whitespace-nowrap", d === today && "bg-now-wash", !dayTotal(d) && "text-muted-foreground")}>
+                      {formatHm(dayTotal(d))}
                     </td>
                   ))}
-                  <td className="num px-4 py-2.5 text-right text-base font-bold">{formatDuration(sum(entries), { blankZero: false })}</td>
+                  <td className="num px-4 py-2.5 text-right text-base font-bold whitespace-nowrap">{formatHm(sum(entries))}</td>
                 </tr>
               </tfoot>
             )}
@@ -256,12 +256,12 @@ function HoursCell({ entries, label, onSave, date }: { entries: TimeEntry[]; lab
   const locked = entries.some((e) => e.locked);
   const multiple = entries.length > 1;
   const notes = entries.map((e) => e.note).filter(Boolean).join("\n");
-  const [draft, setDraft] = useState(formatDuration(total));
+  const [draft, setDraft] = useState(formatHm(total));
   const [invalid, setInvalid] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    setDraft(formatDuration(total));
+    setDraft(formatHm(total));
     setInvalid(false);
   }, [total]);
 
@@ -274,7 +274,7 @@ function HoursCell({ entries, label, onSave, date }: { entries: TimeEntry[]; lab
         title={locked ? "Invoiced, so it can't be changed" : `${entries.length} entries. Open the day to edit them.\n${notes}`.trim()}
         className={cn(box, "flex items-center justify-end border-transparent bg-muted text-muted-foreground shadow-none hover:border-input")}
       >
-        {formatDuration(total)}
+        {formatHm(total)}
         {locked && <span className="sr-only"> (invoiced)</span>}
       </a>
     );
@@ -284,7 +284,7 @@ function HoursCell({ entries, label, onSave, date }: { entries: TimeEntry[]; lab
     const minutes = parseDuration(draft);
     if (minutes === null || minutes > 24 * 60) return setInvalid(true);
     setInvalid(false);
-    setDraft(formatDuration(minutes));
+    setDraft(formatHm(minutes));
     if (minutes === total) return;
     setSaving(true);
     await onSave(minutes);
@@ -294,7 +294,7 @@ function HoursCell({ entries, label, onSave, date }: { entries: TimeEntry[]; lab
   function onKey(e: KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter") (e.target as HTMLInputElement).blur();
     if (e.key === "Escape") {
-      setDraft(formatDuration(total));
+      setDraft(formatHm(total));
       setInvalid(false);
     }
   }
@@ -360,7 +360,7 @@ function WeeklyNotes({
               <span>{dayLabel(e.date, { weekday: "short", month: "short", day: "numeric" })}</span>
               <span className="flex items-center gap-2">
                 {e.locked && <Badge variant="success">Invoiced</Badge>}
-                <span className="num font-normal text-muted-foreground">{formatDuration(e.minutes, { blankZero: false })} hrs</span>
+                <span className="num font-normal text-muted-foreground">{formatHm(e.minutes)}</span>
               </span>
             </Label>
             <Textarea

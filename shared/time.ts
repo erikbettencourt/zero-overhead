@@ -30,6 +30,19 @@ export function formatDuration(minutes: number, { blankZero = true } = {}): stri
   return `${h}:${String(m).padStart(2, "0")}`;
 }
 
+/** 90 -> "1h 30m", 120 -> "2h", 30 -> "30m", 0 -> "" (zero totals stay blank). How the Timesheet reads hours. */
+export function formatHm(minutes: number): string {
+  if (minutes <= 0) return "";
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return h && m ? `${h}h ${m}m` : h ? `${h}h` : `${m}m`;
+}
+
+/** 498500 -> "$4,985": whole dollars, for quick totals. */
+export function formatDollars(cents: number): string {
+  return (Math.round(cents / 100)).toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+}
+
 /** 15000 -> "$150.00" */
 export function formatMoney(cents: number): string {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });

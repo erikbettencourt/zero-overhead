@@ -21,6 +21,8 @@
   --secondary-foreground: #1b2026;
   --muted: #eceee9;
   --muted-foreground: #626970;
+  /* A step down from body text for header lines: Gray 600, 6.9 to 1 on the page. */
+  --subtle-foreground: #4b5563;
   --accent: #eceee9;
   --accent-foreground: #1b2026;
   --destructive: #b42318;
@@ -50,6 +52,7 @@
     --secondary-foreground: #e9ebe7;
     --muted: #22272c;
     --muted-foreground: #9aa1a8;
+    --subtle-foreground: #b4bac0;
     --accent: #262b31;
     --accent-foreground: #e9ebe7;
     --destructive: #ff8a7a;
@@ -97,6 +100,7 @@
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+  --color-subtle-foreground: var(--subtle-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
