@@ -20,6 +20,7 @@ const COLORS: [string, string][] = [
   ["muted", "Quiet fills, hovers"],
   ["foreground", "Text"],
   ["muted-foreground", "Secondary text"],
+  ["subtle-foreground", "Header lines"],
   ["border", "Lines"],
   ["input", "Control borders"],
   ["primary", "Actions"],

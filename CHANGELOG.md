@@ -2,6 +2,14 @@
 
 Each version's changes, newest first. The app checks this repo's version every night and shows **Update available** in the header when there's a newer one. To update, bring the latest changes into your copy of the code on GitHub; Cloudflare deploys them as usual.
 
+## 0.2.5
+
+- **Faster time entry on the Day view.** Click an entry, or select it and press Tab, to change its task, description and hours right in the line. Enter saves and Esc puts it back. To change the project or day, use the line's menu, which opens the full form.
+- **Keyboard all the way.** Left and right change days, up and down move between entries, N adds a row at the bottom, and Delete asks first, inline. In Hours, up and down add or take off 30 minutes; anything you type is kept exactly.
+- **Suggestions.** When you log the same project, task and note on at least 3 of the last 4 same weekdays, that day offers it under "Usually on Fridays", with your usual time and why it showed up. Add makes it a real entry, the X skips it for that day. Two a day at most, and they never count toward a total until added.
+- **A clearer header.** The title is Timesheet in both views, with hours then money underneath: 6h today, 33h 14m this week, $4,985 billable. Track time is a solid button on both.
+- **Hours read 2h 30m** across the Day and Week views, and days with nothing tracked stay blank instead of 0:00.
+
 ## 0.2.4
 
 - **The next tax payment shows what to pay.** On Taxes, the Due next row now matches the amount at the top: the quarter's share, plus any shortfall from earlier quarters, less any overpayment. The share itself shows underneath.
