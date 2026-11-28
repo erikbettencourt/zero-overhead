@@ -2,6 +2,14 @@
 
 Each version's changes, newest first. The app checks this repo's version every night and shows **Update available** in the header when there's a newer one. To update, bring the latest changes into your copy of the code on GitHub; Cloudflare deploys them as usual.
 
+## 0.2.6
+
+- **New entries open in a form.** Add entry and N open a New entry form over the day, so a half-typed row never sits in the list. Enter saves from anywhere in it, Shift+Enter starts a new line in Notes, and Esc or Cancel leaves nothing behind. Entries you already have still edit right in the line.
+- **One Add entry button.** It sits at the bottom of the day, solid, with its N shortcut. The Track time button at the top right is gone from both views.
+- **S skips a suggestion.** Select one with the arrow keys and press S. Delete and Backspace no longer do anything in the list, so nothing gets deleted by accident; delete from the line's menu instead.
+- **Shortcuts you can put away.** The keyboard shortcuts show under the day on your first visit. Close them with the X, and press ? or the small keyboard icon to bring them back. This device remembers.
+- In the Time field of the entry form, up and down add or take off 30 minutes, as they do inline.
+
 ## 0.2.5
 
 - **Faster time entry on the Day view.** Click an entry, or select it and press Tab, to change its task, description and hours right in the line. Enter saves and Esc puts it back. To change the project or day, use the line's menu, which opens the full form.

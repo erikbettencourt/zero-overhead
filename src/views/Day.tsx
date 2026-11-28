@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
-import { CheckIcon, EllipsisIcon, LockIcon, PencilIcon, PlusIcon, SparklesIcon, Trash2Icon, XIcon } from "lucide-react";
+import { CheckIcon, EllipsisIcon, KeyboardIcon, LockIcon, PencilIcon, PlusIcon, SparklesIcon, Trash2Icon, XIcon } from "lucide-react";
 import type { TimeEntry } from "../../shared/types";
 import { formatHm, parseDuration } from "../../shared/time";
 import { api } from "../api";
@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { dayLabel } from "./Timesheet";
 
 const DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -19,8 +19,9 @@ const MAX_MINUTES = 24 * 60;
 const NUDGE = 30;
 export const LAST_PICK = "zo.lastProjectTask";
 const SKIPPED = "zo.skippedSuggestions";
+const SHORTCUTS_HIDDEN = "zo.shortcutsHidden";
 
-/* Choosing a project and task, shared by the inline rows here and the full form. */
+/* Choosing a project and task, shared by the inline rows here and the entry form. */
 
 export function readLastPick(): [number, number] {
   try {
@@ -108,6 +109,37 @@ function useSkipped(date: string) {
   return { skipped: useMemo(() => new Set(all[date] ?? []), [all, date]), skip };
 }
 
+/* The shortcuts bar shows until you close it, on this device. ? or the keyboard icon brings it back. */
+
+function useShortcutsBar() {
+  const [shown, setShown] = useState(() => {
+    try {
+      return localStorage.getItem(SHORTCUTS_HIDDEN) !== "1";
+    } catch {
+      return true;
+    }
+  });
+  const set = useCallback((next: boolean) => {
+    setShown(next);
+    try {
+      if (next) localStorage.removeItem(SHORTCUTS_HIDDEN);
+      else localStorage.setItem(SHORTCUTS_HIDDEN, "1");
+    } catch {
+      // Then it only stays closed for this visit.
+    }
+  }, []);
+  return [shown, set] as const;
+}
+
+/** Up and down in an Hours field add or take off 30 minutes. Anything typed is kept exactly. */
+export function nudgeHours(e: ReactKeyboardEvent<HTMLInputElement>, value: string, onChange: (v: string) => void) {
+  if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+  e.preventDefault();
+  const now = parseDuration(value);
+  if (now === null) return;
+  onChange(formatHm(Math.min(MAX_MINUTES, Math.max(0, now + (e.key === "ArrowUp" ? NUDGE : -NUDGE)))) || "0h");
+}
+
 /** Keys typed into a field, a menu or a dialog are theirs, not shortcuts. */
 export function isShortcutTarget(e: KeyboardEvent): boolean {
   if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return false;
@@ -119,7 +151,7 @@ export function isShortcutTarget(e: KeyboardEvent): boolean {
 }
 
 type Selected = { kind: "entry"; id: number } | { kind: "suggestion"; key: string };
-type Mode = { kind: "view" } | { kind: "edit"; id: number; focus: "note" | "hours" } | { kind: "confirm"; id: number } | { kind: "new" };
+type Mode = { kind: "view" } | { kind: "edit"; id: number; focus: "note" | "hours" } | { kind: "confirm"; id: number };
 
 export function DayBody({
   date,
@@ -127,9 +159,11 @@ export function DayBody({
   days,
   entries,
   history,
+  added,
   onStep,
   onUpsert,
   onRemove,
+  onNew,
   onFullForm,
 }: {
   date: string;
@@ -138,9 +172,13 @@ export function DayBody({
   entries: TimeEntry[] | null;
   /** The four weeks before this one, for suggestions. */
   history: TimeEntry[] | null;
+  /** The entry the New entry form just added, to select it. */
+  added: number | null;
   onStep: (days: number) => void;
   onUpsert: (e: TimeEntry) => void;
   onRemove: (id: number) => void;
+  /** Opens the New entry form for this day. */
+  onNew: () => void;
   onFullForm: (entry: TimeEntry) => void;
 }) {
   const run = useAction();
@@ -148,11 +186,17 @@ export function DayBody({
   const [selected, setSelected] = useState<Selected | null>(null);
   const [mode, setMode] = useState<Mode>({ kind: "view" });
   const { skipped, skip } = useSkipped(date);
+  const [shortcutsShown, setShortcutsShown] = useShortcutsBar();
 
   useEffect(() => {
     setSelected(null);
     setMode({ kind: "view" });
   }, [date]);
+
+  // Select what the New entry form just added, so the keyboard picks up from there.
+  useEffect(() => {
+    if (added !== null) setSelected({ kind: "entry", id: added });
+  }, [added]);
 
   const dayTotal = (d: string) => (entries ?? []).filter((e) => e.date === d).reduce((s, e) => s + e.minutes, 0);
   const list = useMemo(() => (entries ?? []).filter((e) => e.date === date).sort((a, b) => a.id - b.id), [entries, date]);
@@ -251,16 +295,16 @@ export function DayBody({
       } else if (e.key === "Enter" && suggestion) {
         e.preventDefault();
         void addSuggestion(suggestion);
-      } else if ((e.key === "Delete" || e.key === "Backspace") && entry) {
-        e.preventDefault();
-        if (!entry.locked) setMode({ kind: "confirm", id: entry.id });
-      } else if ((e.key === "Delete" || e.key === "Backspace") && suggestion) {
+      } else if ((e.key === "s" || e.key === "S") && suggestion) {
         e.preventDefault();
         setSelected(order[at + 1] ?? order[at - 1] ?? null);
         skip(suggestion.key);
       } else if (e.key === "n" || e.key === "N") {
         e.preventDefault();
-        setMode({ kind: "new" });
+        onNew();
+      } else if (e.key === "?") {
+        e.preventDefault();
+        setShortcutsShown(!shortcutsShown);
       } else if (e.key === "Escape" && selected) {
         setSelected(null);
       }
@@ -271,7 +315,7 @@ export function DayBody({
 
   const weekday = dayLabel(date, { weekday: "long" });
   const busy = mode.kind !== "view";
-  const empty = list.length === 0 && suggestions.length === 0 && mode.kind !== "new";
+  const empty = list.length === 0 && suggestions.length === 0;
 
   return (
     <>
@@ -307,11 +351,7 @@ export function DayBody({
           <div className="px-5 py-14 text-center">
             <p className="font-semibold">Nothing tracked on {weekday}</p>
             <p className="mt-1 text-sm text-muted-foreground">Add an entry for each meeting or block of work, with a note for each.</p>
-            <Button className="mt-4" variant="outline" onClick={() => setMode({ kind: "new" })}>
-              <PlusIcon />
-              Add entry
-              <Kbd>N</Kbd>
-            </Button>
+            <AddEntryButton className="mt-4" onClick={onNew} />
           </div>
         ) : (
           <>
@@ -368,26 +408,9 @@ export function DayBody({
                   onSkip={() => skip(s.key)}
                 />
               ))}
-              {mode.kind === "new" && (
-                <NewRow
-                  date={date}
-                  onDone={(saved) => {
-                    setMode({ kind: "view" });
-                    if (saved) {
-                      onUpsert(saved);
-                      setSelected({ kind: "entry", id: saved.id });
-                    }
-                    focusList();
-                  }}
-                />
-              )}
             </ul>
-            <div className="flex items-center gap-4 border-t bg-muted/50 px-5 py-2.5">
-              <Button variant="ghost" size="sm" className="-ml-3" onClick={() => setMode({ kind: "new" })} disabled={busy}>
-                <PlusIcon />
-                Add entry
-                <Kbd>N</Kbd>
-              </Button>
+            <div className="flex items-center gap-4 border-t bg-muted/50 px-5 py-3">
+              <AddEntryButton onClick={onNew} disabled={busy} />
               <span className="ml-auto text-sm text-muted-foreground">Total</span>
               <span className="num min-w-16 text-right text-xl font-bold">{formatHm(total)}</span>
               <span className="w-8" />
@@ -396,7 +419,36 @@ export function DayBody({
         )}
       </Card>
 
-      <p className="mt-3 hidden flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground md:flex" aria-label="Keyboard shortcuts">
+      <ShortcutsBar shown={shortcutsShown} onShow={setShortcutsShown} />
+    </>
+  );
+}
+
+/** The one way to add an entry by hand. It opens the New entry form. */
+function AddEntryButton({ onClick, disabled, className }: { onClick: () => void; disabled?: boolean; className?: string }) {
+  return (
+    <Button className={className} onClick={onClick} disabled={disabled}>
+      <PlusIcon />
+      Add entry
+      <Kbd className="hidden border-transparent bg-primary-foreground/90 text-primary md:inline-flex">N</Kbd>
+    </Button>
+  );
+}
+
+function ShortcutsBar({ shown, onShow }: { shown: boolean; onShow: (shown: boolean) => void }) {
+  if (!shown) {
+    return (
+      <div className="mt-2 hidden justify-end md:flex">
+        <Button variant="ghost" size="icon-sm" className="text-muted-foreground" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)" onClick={() => onShow(true)}>
+          <KeyboardIcon />
+        </Button>
+      </div>
+    );
+  }
+  return (
+    <div className="mt-3 hidden items-start gap-3 rounded-md border bg-card px-4 py-2.5 text-xs text-muted-foreground md:flex" role="region" aria-label="Keyboard shortcuts">
+      <KeyboardIcon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+      <p className="flex flex-1 flex-wrap items-center gap-x-4 gap-y-1.5">
         <span>
           <Kbd>←</Kbd> <Kbd>→</Kbd> days
         </span>
@@ -410,16 +462,22 @@ export function DayBody({
           <Kbd>Enter</Kbd> saves, or adds a suggestion
         </span>
         <span>
-          <Kbd>Esc</Kbd> cancels
+          <Kbd>S</Kbd> skips a suggestion
         </span>
         <span>
-          <Kbd>Delete</Kbd> deletes, after a confirm, or skips a suggestion
+          <Kbd>Esc</Kbd> cancels
         </span>
         <span>
           <Kbd>N</Kbd> new entry
         </span>
+        <span>
+          <Kbd>?</Kbd> shows or hides this
+        </span>
       </p>
-    </>
+      <Button variant="ghost" size="icon-sm" className="-my-1 -mr-2 size-7" aria-label="Hide keyboard shortcuts" title="Hide. Press ? to bring it back." onClick={() => onShow(false)}>
+        <XIcon />
+      </Button>
+    </div>
   );
 }
 
@@ -516,7 +574,7 @@ function SuggestionLine({ suggestion: s, why, selected, onAdd, onSkip }: { sugge
             <CheckIcon />
             Add
           </Button>
-          <Button variant="ghost" size="icon-sm" aria-label="Skip for today" title="Skip for today" onClick={onSkip}>
+          <Button variant="ghost" size="icon-sm" aria-label="Skip for today" title="Skip for today (S)" onClick={onSkip}>
             <XIcon />
           </Button>
         </div>
@@ -528,13 +586,6 @@ function SuggestionLine({ suggestion: s, why, selected, onAdd, onSkip }: { sugge
 
 /** The Hours field: up and down nudge by 30 minutes; anything typed is kept exactly. */
 function HoursInput({ value, onChange, invalid, autoFocus, id }: { value: string; onChange: (v: string) => void; invalid: boolean; autoFocus?: boolean; id: string }) {
-  function onKey(e: ReactKeyboardEvent<HTMLInputElement>) {
-    if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
-    e.preventDefault();
-    const now = parseDuration(value);
-    if (now === null) return;
-    onChange(formatHm(Math.min(MAX_MINUTES, Math.max(0, now + (e.key === "ArrowUp" ? NUDGE : -NUDGE)))) || "0h");
-  }
   return (
     <Input
       id={id}
@@ -547,7 +598,7 @@ function HoursInput({ value, onChange, invalid, autoFocus, id }: { value: string
       aria-invalid={invalid}
       aria-describedby={`${id}-hint`}
       onChange={(e) => onChange(e.target.value)}
-      onKeyDown={onKey}
+      onKeyDown={(e) => nudgeHours(e, value, onChange)}
     />
   );
 }
@@ -659,93 +710,6 @@ function EditRow({ entry, focus, onDone }: { entry: TimeEntry; focus: "note" | "
           </>
         )}
       </Hint>
-    </li>
-  );
-}
-
-function NewRow({ date, onDone }: { date: string; onDone: (saved: TimeEntry | null) => void }) {
-  const run = useAction();
-  const { projects, tasksFor, defaultPick } = useChoices();
-  const [[projectId, taskId], setPick] = useState(defaultPick);
-  const [note, setNote] = useState("");
-  const [hours, setHours] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const saving = useRef(false);
-
-  function pickProject(id: number) {
-    const tasks = tasksFor(id);
-    setPick([id, tasks.some((t) => t.id === taskId) ? taskId : (tasks[0]?.id ?? 0)]);
-  }
-
-  async function save() {
-    if (saving.current) return;
-    if (!projectId || !taskId) return setError("Choose a project and task.");
-    const minutes = parseDuration(hours);
-    if (minutes === null || minutes > MAX_MINUTES) return setError("Enter the time like 1h 30m, 1:30 or 1.5.");
-    if (minutes === 0) return setError("Enter how long it took.");
-    saving.current = true;
-    const saved = await run(() => api.createEntry({ projectId, taskId, date, minutes, note: note.trim() || null }));
-    saving.current = false;
-    if (saved) {
-      rememberPick(projectId, taskId);
-      onDone(saved);
-    }
-  }
-
-  const id = `new-${date}`;
-  return (
-    <li className={editFrame} onKeyDownCapture={rowKeys(() => void save(), () => onDone(null))}>
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm font-semibold text-now">New entry</span>
-        <span className="ml-auto flex items-center gap-1 text-xs text-muted-foreground">
-          <Kbd>Enter</Kbd> saves, <Kbd>Esc</Kbd> cancels
-        </span>
-      </div>
-      <div className="mt-2 grid gap-3 sm:grid-cols-[minmax(12rem,16rem)_minmax(10rem,13rem)_1fr_9rem]">
-        <Field label="Project" htmlFor={`${id}-project`}>
-          <Select value={projectId ? String(projectId) : ""} onValueChange={(v) => pickProject(Number(v))}>
-            <SelectTrigger id={`${id}-project`} className="h-10" autoFocus>
-              <SelectValue placeholder="Choose a project">
-                {(() => {
-                  const hit = projects.flatMap(([client, list]) => list.map((p) => [client, p] as const)).find(([, p]) => p.id === projectId);
-                  return hit ? (
-                    <span className="truncate">
-                      <span className="text-muted-foreground">{hit[0]} / </span>
-                      {hit[1].name}
-                    </span>
-                  ) : null;
-                })()}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {projects.map(([client, list]) => (
-                <SelectGroup key={client}>
-                  <SelectLabel>{client}</SelectLabel>
-                  {list.map((p) => (
-                    <SelectItem key={p.id} value={String(p.id)}>
-                      {p.name}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              ))}
-            </SelectContent>
-          </Select>
-        </Field>
-        <Field label="Task" htmlFor={`${id}-task`}>
-          <TaskSelect id={`${id}-task`} projectId={projectId} value={taskId} onChange={(t) => setPick([projectId, t])} />
-        </Field>
-        <Field label="Description" htmlFor={`${id}-note`}>
-          <Input id={`${id}-note`} className="h-10" placeholder="What was this time for?" value={note} onChange={(e) => setNote(e.target.value)} />
-        </Field>
-        <Field label="Hours" htmlFor={`${id}-hours`}>
-          <HoursInput id={`${id}-hours`} value={hours} onChange={setHours} invalid={!!error} />
-        </Field>
-      </div>
-      {error && (
-        <Hint id={`${id}-hours-hint`}>
-          <span className="text-destructive">{error}</span>
-        </Hint>
-      )}
     </li>
   );
 }

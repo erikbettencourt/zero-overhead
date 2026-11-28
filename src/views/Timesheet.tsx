@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent, type KeyboardEvent } from "react";
-import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon, PlusIcon } from "lucide-react";
+import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import type { Summary, TimeEntry } from "../../shared/types";
 import { addDays, formatDollars, formatHm, parseDuration, startOfWeek, toIsoDate } from "../../shared/time";
 import { api } from "../api";
@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrig
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import WeekGrid from "./Week";
-import { DayBody, isShortcutTarget, rememberPick, useChoices } from "./Day";
+import { DayBody, isShortcutTarget, Kbd, nudgeHours, rememberPick, useChoices } from "./Day";
 
 const MAX_MINUTES = 24 * 60;
 
@@ -45,6 +45,8 @@ export default function Timesheet({ mode, date }: { mode: Mode; date: string }) 
   const [history, setHistory] = useState<TimeEntry[] | null>(null);
   const [dialog, setDialog] = useState<{ date: string; entry?: TimeEntry } | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+  // The last entry the New entry form added, so the Day view can select it.
+  const [added, setAdded] = useState<number | null>(null);
   const run = useAction();
 
   const load = useCallback(async () => {
@@ -180,10 +182,6 @@ export default function Timesheet({ mode, date }: { mode: Mode; date: string }) 
               <TabsTrigger value="week">Week</TabsTrigger>
             </TabsList>
           </Tabs>
-          <Button onClick={() => setDialog({ date: newEntryDate })}>
-            <PlusIcon />
-            Track time
-          </Button>
         </div>
       </div>
 
@@ -194,9 +192,11 @@ export default function Timesheet({ mode, date }: { mode: Mode; date: string }) 
           days={days}
           entries={entries}
           history={history}
+          added={added}
           onStep={(n) => go(addDays(date, n))}
           onUpsert={upsert}
           onRemove={remove}
+          onNew={() => setDialog({ date })}
           onFullForm={(entry) => setDialog({ date: entry.date, entry })}
         />
       ) : (
@@ -212,6 +212,7 @@ export default function Timesheet({ mode, date }: { mode: Mode; date: string }) 
             onClose={() => setDialog(null)}
             onSaved={(e) => {
               upsert(e);
+              if (!dialog.entry) setAdded(e.id);
               setDialog(null);
             }}
             onDeleted={(id) => {
@@ -278,20 +279,21 @@ function EntryDialog({
     if (ok) onDeleted(entry.id);
   }
 
-  const submitOnCmdEnter = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-      e.preventDefault();
-      e.currentTarget.form?.requestSubmit();
-    }
+  // Enter saves from anywhere in the form, Shift+Enter starts a new line in Notes. An open list keeps its own keys.
+  const enterSaves = (e: KeyboardEvent<HTMLFormElement>) => {
+    const t = e.target as HTMLElement;
+    if (e.key !== "Enter" || e.shiftKey || e.nativeEvent.isComposing || t.closest("[role=listbox], [role=combobox], button")) return;
+    e.preventDefault();
+    e.currentTarget.requestSubmit();
   };
 
   return (
     <DialogContent>
       <DialogHeader>
-        <DialogTitle>{entry ? "Edit entry" : "Track time"}</DialogTitle>
+        <DialogTitle>{entry ? "Edit entry" : "New entry"}</DialogTitle>
         <DialogDescription>{dayLabel(date, { weekday: "long", month: "long", day: "numeric" })}</DialogDescription>
       </DialogHeader>
-      <form onSubmit={(e) => void save(e)} className="grid gap-4">
+      <form onSubmit={(e) => void save(e)} onKeyDown={enterSaves} className="grid gap-4">
         <div className="grid gap-2">
           <Label htmlFor="entry-project">Project</Label>
           <Select value={String(projectId)} onValueChange={(v) => pickProject(Number(v))}>
@@ -347,7 +349,6 @@ function EntryDialog({
               placeholder="What was this time for?"
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              onKeyDown={submitOnCmdEnter}
             />
           </div>
           <div className="grid content-start gap-2">
@@ -360,13 +361,17 @@ function EntryDialog({
               value={hours}
               aria-invalid={!!error}
               onChange={(e) => setHours(e.target.value)}
+              onKeyDown={(e) => nudgeHours(e, hours, setHours)}
             />
           </div>
         </div>
         {error && <p className="-mt-2 text-sm text-destructive">{error}</p>}
-        <DialogFooter className="mt-1">
+        <DialogFooter className="mt-1 sm:items-center">
+          <span className="mr-auto hidden items-center gap-1 text-xs text-muted-foreground sm:flex">
+            <Kbd>Enter</Kbd> saves, <Kbd>Esc</Kbd> cancels
+          </span>
           {entry && (
-            <Button type="button" variant="ghost" className="mr-auto text-muted-foreground hover:text-destructive" onClick={() => void del()}>
+            <Button type="button" variant="ghost" className="text-muted-foreground hover:text-destructive" onClick={() => void del()}>
               Delete
             </Button>
           )}
