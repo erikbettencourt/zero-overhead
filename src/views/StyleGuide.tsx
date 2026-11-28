@@ -84,7 +84,7 @@ export default function StyleGuide() {
         <div className="flex flex-wrap items-center gap-2">
           <Button>
             <PlusIcon />
-            Track time
+            Add entry
           </Button>
           <Button variant="outline">Cancel</Button>
           <Button variant="secondary">Secondary</Button>

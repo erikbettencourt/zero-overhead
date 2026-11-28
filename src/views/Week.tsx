@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Kbd } from "./Day";
 import { dayLabel } from "./Timesheet";
 
 type RowKey = string; // `${projectId}:${taskId}`
@@ -153,10 +154,11 @@ export default function WeekGrid({
                 <tr>
                   <td colSpan={10} className="px-4 py-14 text-center">
                     <p className="font-semibold">Nothing tracked this week</p>
-                    <p className="mt-1 text-sm text-muted-foreground">Add a row below, copy last week's rows, or track time.</p>
-                    <Button className="mt-4" variant="outline" onClick={onTrack}>
+                    <p className="mt-1 text-sm text-muted-foreground">Add a row below, copy last week's rows, or add an entry.</p>
+                    <Button className="mt-4" onClick={onTrack}>
                       <PlusIcon />
-                      Track time
+                      Add entry
+                      <Kbd className="hidden border-transparent bg-primary-foreground/90 text-primary md:inline-flex">N</Kbd>
                     </Button>
                   </td>
                 </tr>
